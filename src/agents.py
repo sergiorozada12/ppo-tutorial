@@ -97,7 +97,7 @@ class PPOAgent:
         return action.numpy()
 
     def update(self) -> None:
-        rewards = torch.as_tensor(rewards).double()
+        rewards = torch.as_tensor(self.buffer.rewards).reshape(-1, 1).double()
 
         old_states = torch.stack(self.buffer.states, dim=0).detach()
         old_states_next = torch.stack(self.buffer.states, dim=0).detach()
