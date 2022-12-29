@@ -1,21 +1,21 @@
 import matplotlib.pyplot as plt
-import torch
 
 from src.environments import CustomPendulumEnv
 from src.agents import PPOAgent
 from src.algorithms import train
 
-# Parameters
+
 STATE_DIM = 2           # dimensions of the state space
 ACTION_DIM = 1          # dimensions of the action space
-EPOCHS = 2_000          # max number of episodes
+EPOCHS = 10_000         # max number of episodes
 MAX_STEPS = 100         # max timesteps in one episode
-UPDATE_FREQ = 10        # Steps frequency to update
-TRAINING_EPOCHS = 100   # update policy for K epochs in one PPO update
-EPS_CLIP = 0.2          # clip parameter for PPO
+UPDATE_FREQ = 40        # steps frequency to update
+TRAINING_EPOCHS = 40    # update policy for K epochs in one PPO update
+EPS_CLIP = 0.1          # clip parameter for PPO
 GAMMA = 0.99            # discount factor
 LR_ACTOR = 1e-5         # learning rate for actor network
-LR_CRITIC = 1e-5        # learning rate for critic network
+LR_CRITIC = 1e-4        # learning rate for critic network
+
 
 if __name__ == "__main__":
 
@@ -31,6 +31,7 @@ if __name__ == "__main__":
     )
 
     agent, returns = train(
+        env=env,
         ppo_agent=agent,
         epochs=EPOCHS,
         max_steps=MAX_STEPS,
@@ -40,7 +41,7 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=[8, 7])
     plt.grid()
     plt.plot(returns)
-    plt.xlim(0, 5_000)
+    plt.xlim(0, 10_000)
     plt.ylim(0, 110)
     plt.xlabel("Episodes")
     plt.ylabel("Return")

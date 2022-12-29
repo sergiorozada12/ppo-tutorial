@@ -23,6 +23,7 @@ def train(
             
             ppo_agent.buffer.states_next.append(state_next)
             ppo_agent.buffer.rewards.append(reward)
+            ppo_agent.buffer.terminals.append(done)
             cum_reward += reward
             
             if len(ppo_agent.buffer) == update_freq:

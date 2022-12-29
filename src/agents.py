@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy as np
 import torch
@@ -96,31 +96,43 @@ class PPOAgent:
 
         return action.numpy()
 
-    def update(self) -> None:
-        rewards = torch.as_tensor(self.buffer.rewards).reshape(-1, 1).double()
+    def calculate_returns(self) -> List[float]:
+        # GAE in MC fashion
+        returns = []
+        return_actual = 0
+        for reward, done in zip(reversed(self.buffer.rewards), reversed(self.buffer.terminals)):
+            if done:
+                return_actual = 0
+            return_actual = reward + self.gamma*return_actual
+            returns.insert(0, return_actual)
+        return returns
+
+    def update(self):
+        rewards = self.calculate_returns()
+        rewards = torch.as_tensor(rewards).reshape(-1, 1).double().detach()
 
         old_states = torch.stack(self.buffer.states, dim=0).detach()
         old_states_next = torch.stack(self.buffer.states, dim=0).detach()
         old_actions = torch.stack(self.buffer.actions, dim=0).detach()
         old_logprobs = torch.stack(self.buffer.logprobs, dim=0).detach()
+        old_logprobs = torch.stack(self.buffer.logprobs, dim=0).detach()
+        
+        self.buffer.clear()
 
         for _ in range(self.epochs):
             logprobs = self.policy.evaluate_logprob(old_states, old_actions)
             state_values = self.policy.evaluate_value(old_states)
-            state_next_values = self.policy.evaluate_value(old_states_next)
             
             ratio = torch.exp(logprobs - old_logprobs)
             ratio_clamped = torch.clamp(ratio, 1 - self.eps_clip, 1 + self.eps_clip)
 
-            td_target = rewards + self.gamma*state_next_values 
-            td_estimation = state_values
-            td_error = td_target.detach() - td_estimation.detach()
-            
-            minorizer_raw = ratio * td_error
-            minorizer_clamped = ratio_clamped * td_error
+            advantage = rewards - state_values.detach()
+                        
+            minorizer_raw = ratio * advantage
+            minorizer_clamped = ratio_clamped * advantage
 
             loss_actor = -torch.min(minorizer_raw, minorizer_clamped) 
-            loss_critic = self.MseLoss(td_target.detach(), td_estimation)
+            loss_critic = self.MseLoss(rewards, state_values)
             
             # Actor
             self.opt_actor.zero_grad()
@@ -133,4 +145,3 @@ class PPOAgent:
             self.opt_critic.step()
             
         self.policy_old.load_state_dict(self.policy.state_dict())
-        self.buffer.clear()

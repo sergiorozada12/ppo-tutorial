@@ -5,6 +5,7 @@ class Buffer:
         self.states_next = []
         self.logprobs = []
         self.rewards = []
+        self.terminals = []
     
     def clear(self):
         self.actions = []
@@ -12,6 +13,7 @@ class Buffer:
         self.states_next = []
         self.logprobs = []
         self.rewards = []
+        self.terminals = []
         
     def __len__(self):
         return len(self.states)
