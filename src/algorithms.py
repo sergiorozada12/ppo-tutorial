@@ -17,11 +17,10 @@ def train(
         state = env.reset()
         cum_reward = 0
 
-        for step in range(max_steps):
+        for _ in range(max_steps):
             action = ppo_agent.select_action(state)
             state_next, reward, done, _ = env.step(action)
             
-            ppo_agent.buffer.states_next.append(state_next)
             ppo_agent.buffer.rewards.append(reward)
             ppo_agent.buffer.terminals.append(done)
             cum_reward += reward

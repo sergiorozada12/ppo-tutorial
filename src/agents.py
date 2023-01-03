@@ -25,34 +25,34 @@ class Agent(nn.Module):
         
         self.log_sigma = torch.ones(1, dtype=torch.double, requires_grad=True)
 
-    def pi(self, state: np.ndarray) -> torch.distributions.MultivariateNormal:
+    def pi(self, state: np.ndarray) -> torch.distributions.Normal:
         state = torch.as_tensor(state).double()
         
         # Parameters
-        mu = self.actor(state)
+        mu = self.actor(state).squeeze()
         log_sigma = self.log_sigma
         sigma = torch.exp(log_sigma)
         
         # Distribution
-        pi = torch.distributions.MultivariateNormal(mu, torch.diag(sigma))
+        pi = torch.distributions.Normal(mu, torch.diag(sigma))
         return pi
 
     def evaluate_logprob(self, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
         # Actor
         dist = self.pi(state)
-        action_logprob = dist.log_prob(action.reshape(-1, 1))
-        return action_logprob
+        action_logprob = dist.log_prob(action)
+        return action_logprob.squeeze()
     
     def evaluate_value(self, state: torch.Tensor) -> torch.Tensor:
         # Critic
         value = self.critic(state)
-        return value
+        return value.squeeze()
 
     def act(self, state: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         dist = self.pi(state)
         action = dist.sample()
         action_logprob = dist.log_prob(action)
-        return action.detach(), action_logprob.detach()
+        return action.detach().flatten(), action_logprob.detach().flatten()
 
 
 class PPOAgent:
@@ -109,13 +109,11 @@ class PPOAgent:
 
     def update(self):
         rewards = self.calculate_returns()
-        rewards = torch.as_tensor(rewards).reshape(-1, 1).double().detach()
+        rewards = torch.as_tensor(rewards).double().detach().squeeze()
 
         old_states = torch.stack(self.buffer.states, dim=0).detach()
-        old_states_next = torch.stack(self.buffer.states, dim=0).detach()
-        old_actions = torch.stack(self.buffer.actions, dim=0).detach()
-        old_logprobs = torch.stack(self.buffer.logprobs, dim=0).detach()
-        old_logprobs = torch.stack(self.buffer.logprobs, dim=0).detach()
+        old_actions = torch.stack(self.buffer.actions, dim=0).detach().squeeze()
+        old_logprobs = torch.stack(self.buffer.logprobs, dim=0).detach().squeeze()
         
         self.buffer.clear()
 
@@ -131,7 +129,7 @@ class PPOAgent:
             minorizer_raw = ratio * advantage
             minorizer_clamped = ratio_clamped * advantage
 
-            loss_actor = -torch.min(minorizer_raw, minorizer_clamped) 
+            loss_actor = -torch.min(minorizer_raw, minorizer_clamped)
             loss_critic = self.MseLoss(rewards, state_values)
             
             # Actor

@@ -2,7 +2,6 @@ class Buffer:
     def __init__(self):
         self.actions = []
         self.states = []
-        self.states_next = []
         self.logprobs = []
         self.rewards = []
         self.terminals = []
@@ -10,7 +9,6 @@ class Buffer:
     def clear(self):
         self.actions = []
         self.states = []
-        self.states_next = []
         self.logprobs = []
         self.rewards = []
         self.terminals = []
