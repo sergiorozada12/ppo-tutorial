@@ -20,19 +20,19 @@ def train(
         for _ in range(max_steps):
             action = ppo_agent.select_action(state)
             state_next, reward, done, _ = env.step(action)
-            
+
             ppo_agent.buffer.rewards.append(reward)
             ppo_agent.buffer.terminals.append(done)
             cum_reward += reward
-            
+
             if len(ppo_agent.buffer) == update_freq:
                 ppo_agent.update()
 
             if done:
                 break
-                
+
             state = state_next
-        
+
         returns.append(cum_reward)
         print(f'{epoch}/{epochs}: {returns[-1]} \r', end='')
     return ppo_agent, returns

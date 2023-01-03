@@ -27,12 +27,12 @@ class Agent(nn.Module):
 
     def pi(self, state: np.ndarray) -> torch.distributions.Normal:
         state = torch.as_tensor(state).double()
-        
+
         # Parameters
         mu = self.actor(state).squeeze()
         log_sigma = self.log_sigma
         sigma = torch.exp(log_sigma)
-        
+
         # Distribution
         pi = torch.distributions.Normal(mu, torch.diag(sigma))
         return pi
@@ -125,21 +125,21 @@ class PPOAgent:
             ratio_clamped = torch.clamp(ratio, 1 - self.eps_clip, 1 + self.eps_clip)
 
             advantage = rewards - state_values.detach()
-                        
+
             minorizer_raw = ratio * advantage
             minorizer_clamped = ratio_clamped * advantage
 
             loss_actor = -torch.min(minorizer_raw, minorizer_clamped)
             loss_critic = self.MseLoss(rewards, state_values)
-            
+
             # Actor
             self.opt_actor.zero_grad()
             loss_actor.mean().backward()
             self.opt_actor.step()
-            
+
             # Critic
             self.opt_critic.zero_grad()
             loss_critic.mean().backward()
             self.opt_critic.step()
-            
+
         self.policy_old.load_state_dict(self.policy.state_dict())
